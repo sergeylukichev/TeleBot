@@ -40,3 +40,5 @@ buildNumber.properties
 *.iws
 *.iml
 *.ipr
+
+src/main/resources/application.yml
