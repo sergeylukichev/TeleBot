@@ -1,7 +1,9 @@
 package de.telran;
 
+import de.telran.weather.WeatherService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -24,6 +26,9 @@ public class TeleBot extends TelegramLongPollingBot {
 	
 	@Value("${bot.username}")
 	private String username;
+
+	@Autowired
+	WeatherService weatherService;
 	
 	@Override
 	public String getBotToken() {
@@ -42,15 +47,21 @@ public class TeleBot extends TelegramLongPollingBot {
 			SendMessage response = new SendMessage();
 			Long chatId = message.getChatId();
 			response.setChatId(chatId);
-			String text = message.getText() + " " + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME);
-			response.setText(text);
+			String out = getResponseByRequest(message.getText());
+			response.setText(out);
 			try {
 				execute(response);
-				logger.info("Sent message \"{}\" to {}", text, chatId);
+				logger.info("Sent message \"{}\" to {}", out, chatId);
 			} catch (TelegramApiException e) {
-				logger.error("Failed to send message \"{}\" to {} due to error: {}", text, chatId, e.getMessage());
+				logger.error("Failed to send message \"{}\" to {} due to error: {}", out, chatId, e.getMessage());
 			}
 		}
+	}
+
+	private String getResponseByRequest(String input) {
+		double weatherInCity = weatherService.getWeatherInCity(input);
+		String text = "Weather in " + input + " is " + weatherInCity + " grad Celsius";
+		return text;
 	}
 
 	@PostConstruct
